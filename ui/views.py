@@ -12,8 +12,45 @@ def show_main_menu():
         ]
     ).ask()
 
-def ask_for_team_id():
-    return questionary.text("Podaj ID druzyny:").ask()
+def ask_for_team_choice(standings_data):
+    """Wyświetla interaktywną listę drużyn do wyboru za pomocą strzałek."""
+    if not standings_data:
+        return None
+
+    items = []
+    if isinstance(standings_data, list):
+        items = standings_data
+    elif isinstance(standings_data, dict):
+        items = standings_data.get("standings", standings_data.get("table", standings_data.get("data", [])))
+
+    if not items:
+        return None
+
+    choices = []
+    team_mapping = {}
+
+    for item in items:
+        team_info = item.get("team", {})
+        if isinstance(team_info, dict):
+            team_id = team_info.get("id")
+            team_name = team_info.get("name", "Nieznana")
+        else:
+            team_id = item.get("team_id", item.get("id"))
+            team_name = item.get("team_name", str(team_info))
+
+        if team_id is not None:
+            choices.append(team_name)
+            team_mapping[team_name] = team_id
+
+    if not choices:
+        return None
+
+    selected_name = questionary.select(
+        "Wybierz drużynę:",
+        choices=choices
+    ).ask()
+
+    return team_mapping.get(selected_name)
 
 def ask_for_poisson_lambdas():
     home = float(questionary.text("Podaj oczekiwana liczbe goli gospodarza (lambda):", default="1.5").ask())
@@ -21,12 +58,10 @@ def ask_for_poisson_lambdas():
     return home, away
 
 def render_standings_table(standings_data):
-    """Wyświetla tabelę ligową zgodnie ze strukturą danych z sportapi.ai."""
     if not standings_data:
         print("Brak danych tabeli do wyswietlenia.")
         return
 
-    # Wyciąganie listy w zależności od formatu zwracanego przez endpoint
     items = []
     if isinstance(standings_data, list):
         items = standings_data
@@ -41,7 +76,6 @@ def render_standings_table(standings_data):
     headers = ["Poz.", "Druzyna", "Mecze", "W", "R", "P", "Bramki", "Pkt"]
 
     for idx, item in enumerate(items, 1):
-        # Pobieranie nazwy drużyny (obsługa wariantu z pod-obiektem 'team' lub nazwą bezpośrednią)
         team_info = item.get("team", {})
         if isinstance(team_info, dict):
             team_name = team_info.get("name", item.get("team_name", "Nieznana"))
@@ -74,7 +108,6 @@ def render_standings_table(standings_data):
     print("\n" + tabulate(table_rows, headers=headers, tablefmt="grid") + "\n")
 
 def render_simulation_results(home_lambda, away_lambda, results):
-    """Wyświetla podsumowanie symulacji Poissona."""
     summary_data = [
         ["Wygrana Gospodarza (1)", f"{results['home_win']:.2f}%"],
         ["Remis (X)", f"{results['draw']:.2f}%"],

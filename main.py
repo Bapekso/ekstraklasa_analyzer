@@ -44,7 +44,6 @@ def main():
             results = calculate_match_probabilities(home_lambda, away_lambda)
             render_simulation_results(home_lambda, away_lambda, results)
 
-        # Pauza przed ponownym wyświetleniem menu
         input("Naciśnij Enter, aby powrócić do menu...")
 
 if __name__ == "__main__":
