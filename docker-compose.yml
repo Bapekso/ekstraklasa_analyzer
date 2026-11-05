@@ -1,0 +1,10 @@
+version: '3.8'
+
+services:
+  ekstraklasa-app:
+    build: .
+    container_name: ekstraklasa_analyzer
+    env_file:
+      - .env
+    stdin_open: true
+    tty: true
