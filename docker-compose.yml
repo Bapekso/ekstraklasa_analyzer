@@ -6,5 +6,7 @@ services:
     container_name: ekstraklasa_analyzer
     env_file:
       - .env
+    volumes:
+      - .:/app
     stdin_open: true
     tty: true
