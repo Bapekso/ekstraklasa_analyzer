@@ -1,6 +1,6 @@
 import questionary
 from services.api_client import SportAPIClient
-from core.calculator import calculate_match_probabilities
+from core.calculator import calculate_match_probabilities, calculate_team_lambdas
 from ui.views import (
     show_main_menu,
     render_standings_table,
@@ -90,7 +90,6 @@ def main():
                     choices.append(team_name)
                     team_data_map[team_name] = item
 
-                # Wybór gospodarza i gościa
                 home_team = questionary.select("Wybierz drużynę gospodarzy:", choices=choices).ask()
                 away_team = questionary.select("Wybierz drużynę gości:", choices=choices).ask()
 
@@ -101,25 +100,10 @@ def main():
                         h_data = team_data_map[home_team]
                         a_data = team_data_map[away_team]
 
-                        # Obliczanie prostych wskaźników średniej bramek na mecz (lambda)
-                        h_played = max(int(h_data.get("played", h_data.get("playedMatches", 1))), 1)
-                        a_played = max(int(a_data.get("played", a_data.get("playedMatches", 1))), 1)
+                        # Wywołanie nowego algorytmu siły formacji
+                        home_lambda, away_lambda = calculate_team_lambdas(h_data, a_data, items)
 
-                        h_goals_scored = int(h_data.get("goals_for", h_data.get("goalsFor", h_data.get("for", 0))))
-                        h_goals_conceded = int(h_data.get("goals_against", h_data.get("goalsAgainst", h_data.get("against", 0))))
-                        
-                        a_goals_scored = int(a_data.get("goals_for", a_data.get("goalsFor", a_data.get("for", 0))))
-                        a_goals_conceded = int(a_data.get("goals_against", a_data.get("goalsAgainst", a_data.get("against", 0))))
-
-                        # Prosta baza do lambd: średnia strzelonych przez gospodarza + średnia straconych przez gościa (podzielone na 2)
-                        home_lambda = round(((h_goals_scored / h_played) + (a_goals_conceded / a_played)) / 2, 2)
-                        away_lambda = round(((a_goals_scored / a_played) + (h_goals_conceded / h_played)) / 2, 2)
-
-                        # Zabezpieczenie przed wartością 0
-                        home_lambda = max(home_lambda, 0.2)
-                        away_lambda = max(away_lambda, 0.2)
-
-                        print(f"\n[AUTO-LAMBDA] Gospodarz ({home_team}): {home_lambda} | Gość ({away_team}): {away_lambda}")
+                        print(f"\n[MODEL SIŁY ABU/DEF] Gospodarz ({home_team}): λ={home_lambda} | Gość ({away_team}): λ={away_lambda}")
 
                         results = calculate_match_probabilities(home_lambda, away_lambda)
                         render_simulation_results(home_lambda, away_lambda, results)
