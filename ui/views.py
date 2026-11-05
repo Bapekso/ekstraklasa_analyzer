@@ -21,24 +21,53 @@ def ask_for_poisson_lambdas():
     return home, away
 
 def render_standings_table(standings_data):
-    """Wyświetla tabelę ligową w estetycznej formie tekstowej."""
-    if not standings_data or "standings" not in standings_data:
+    """Wyświetla tabelę ligową zgodnie ze strukturą danych z sportapi.ai."""
+    if not standings_data:
         print("Brak danych tabeli do wyswietlenia.")
+        return
+
+    # Wyciąganie listy w zależności od formatu zwracanego przez endpoint
+    items = []
+    if isinstance(standings_data, list):
+        items = standings_data
+    elif isinstance(standings_data, dict):
+        items = standings_data.get("standings", standings_data.get("table", standings_data.get("data", [])))
+
+    if not items:
+        print("Brak danych w odpowiedzi API.")
         return
 
     table_rows = []
     headers = ["Poz.", "Druzyna", "Mecze", "W", "R", "P", "Bramki", "Pkt"]
 
-    for item in standings_data.get("standings", []):
+    for idx, item in enumerate(items, 1):
+        # Pobieranie nazwy drużyny (obsługa wariantu z pod-obiektem 'team' lub nazwą bezpośrednią)
+        team_info = item.get("team", {})
+        if isinstance(team_info, dict):
+            team_name = team_info.get("name", item.get("team_name", "Nieznana"))
+        else:
+            team_name = item.get("team_name", str(team_info) if team_info else "Nieznana")
+
+        position = item.get("position", item.get("rank", idx))
+        played = item.get("played", item.get("playedMatches", 0))
+        won = item.get("won", item.get("win", 0))
+        drawn = item.get("draw", item.get("drawn", 0))
+        lost = item.get("lost", item.get("loss", 0))
+        
+        goals_for = item.get("goals_for", item.get("goalsFor", item.get("for", 0)))
+        goals_against = item.get("goals_against", item.get("goalsAgainst", item.get("against", 0)))
+        
+        points = item.get("points", item.get("pts", 0))
+
         row = [
-            item.get("position", "-"),
-            item.get("team_name", "Nieznana"),
-            item.get("played", 0),
-            item.get("won", 0),
-            item.get("drawn", 0),
-            item.get("lost", 0),
-            f"{item.get('goals_for', 0)}:{item.get('goals_against', 0)}",
-            item.get("points", 0)
+            position,
+            team_name,
+            played,
+            won,
+            drawn,
+            lost,
+            f"{goals_for}:{goals_against}",
+            points
         ]
         table_rows.append(row)
 

@@ -29,12 +29,13 @@ def main():
             if team_id_str and team_id_str.isdigit():
                 team_data = client.get_team_details(int(team_id_str))
                 if team_data:
-                    team_info = team_data.get("team", {})
+                    # Sprawdzenie czy dane mają strukturę słownika z kluczem team, czy są bezpośrednie
+                    team_info = team_data.get("team", team_data if isinstance(team_data, dict) else {})
                     print("\n--- SZCZEGOLY DRUZYNY ---")
-                    print(f"Nazwa: {team_info.get('name')}")
-                    print(f"Miasto: {team_info.get('city')}")
-                    print(f"Stadion: {team_info.get('stadium_name')}")
-                    print(f"Trener: {team_info.get('coach_name')}\n")
+                    print(f"Nazwa: {team_info.get('name', 'Brak danych')}")
+                    print(f"Miasto: {team_info.get('city', 'Brak danych')}")
+                    print(f"Stadion: {team_info.get('stadium_name', 'Brak danych')}")
+                    print(f"Trener: {team_info.get('coach_name', 'Brak danych')}\n")
             else:
                 print("Nieprawidlowy format ID.")
 
@@ -42,6 +43,9 @@ def main():
             home_lambda, away_lambda = ask_for_poisson_lambdas()
             results = calculate_match_probabilities(home_lambda, away_lambda)
             render_simulation_results(home_lambda, away_lambda, results)
+
+        # Pauza przed ponownym wyświetleniem menu
+        input("Naciśnij Enter, aby powrócić do menu...")
 
 if __name__ == "__main__":
     main()
